@@ -12,7 +12,7 @@ import java.util.UUID
 class BloodPressureEntity(
 
     @Id
-    @Column(columnDefinition = "CHAR(36)")
+    @Column(columnDefinition = "CHAR(36) CHARACTER SET ascii")
     val id: UUID,
 
     val systolic: Int,
