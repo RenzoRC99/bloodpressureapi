@@ -14,17 +14,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.filter.OncePerRequestFilter
-import java.util.*
+import java.util.Date
 import javax.crypto.SecretKey
 
 @Configuration
@@ -55,10 +55,10 @@ class SecurityConfig {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .csrf { it.disable() } // Desactivar CSRF para APIs stateless
+            .csrf { it.disable() }
             .authorizeHttpRequests { authorize ->
                 authorize
-                    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh").permitAll()
                     .anyRequest().authenticated()
             }
             .sessionManagement { session ->
@@ -67,7 +67,7 @@ class SecurityConfig {
 
         http.addFilterBefore(
             JWTAuthenticationFilter(),
-            org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter::class.java
+            UsernamePasswordAuthenticationFilter::class.java
         )
 
         http.cors { it.configurationSource(corsConfigurationSource()) }
@@ -96,8 +96,7 @@ class SecurityConfig {
                     .body
                 val username = claims.subject
                 if (username != null) {
-                    // ✅ Ahora asigna ROLE_ADMIN, coherente con AuthenticationManager
-                    val auth: Authentication = UsernamePasswordAuthenticationToken(
+                    val auth = UsernamePasswordAuthenticationToken(
                         username,
                         null,
                         listOf(SimpleGrantedAuthority("ROLE_ADMIN"))
@@ -113,14 +112,45 @@ class SecurityConfig {
         }
     }
 
-    // Función para generar un JWT válido
-    fun generateToken(username: String): String {
-        val expiration = Date(System.currentTimeMillis() + 1000 * 60 * 60) // 1 hora
+    // =================== TOKENS ===================
+
+    fun generateAccessToken(username: String): String {
+        val expiration = Date(System.currentTimeMillis() + 15 * 60 * 1000) // 15 min
         return Jwts.builder()
             .setSubject(username)
+            .claim("type", "ACCESS")
             .setExpiration(expiration)
             .signWith(secretKey)
             .compact()
+    }
+
+    fun generateRefreshToken(username: String): String {
+        val expiration = Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000) // 7 días
+        return Jwts.builder()
+            .setSubject(username)
+            .claim("type", "REFRESH")
+            .setExpiration(expiration)
+            .signWith(secretKey)
+            .compact()
+    }
+
+    fun isValid(token: String): Boolean {
+        return try {
+            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun isRefreshToken(token: String): Boolean {
+        val claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).body
+        return claims["type"] == "REFRESH"
+    }
+
+    fun extractUsername(token: String): String {
+        val claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).body
+        return claims.subject
     }
 
     @Bean
