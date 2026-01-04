@@ -8,7 +8,6 @@ object BloodPressureMapper {
 
     fun toEntity(domain: BloodPressure): BloodPressureEntity =
         BloodPressureEntity(
-            id = domain.id,
             systolic = domain.systolic,
             diastolic = domain.diastolic,
             pulse = domain.pulse,
@@ -24,5 +23,16 @@ object BloodPressureMapper {
             pulse = entity.pulse,
             weight = entity.weight,
             measuredAt = entity.measuredAt
+        )
+
+    // Para update, mantenemos ID
+    fun toEntityForUpdate(domain: BloodPressure): BloodPressureEntity =
+        BloodPressureEntity(
+            id = domain.id,
+            systolic = domain.systolic,
+            diastolic = domain.diastolic,
+            pulse = domain.pulse,
+            weight = domain.weight,
+            measuredAt = domain.measuredAt
         )
 }

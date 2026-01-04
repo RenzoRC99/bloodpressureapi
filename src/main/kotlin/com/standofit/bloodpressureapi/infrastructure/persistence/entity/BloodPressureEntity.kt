@@ -2,6 +2,7 @@ package com.standofit.bloodpressureapi.infrastructure.persistence.entity
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.LocalDateTime
@@ -12,8 +13,9 @@ import java.util.UUID
 class BloodPressureEntity(
 
     @Id
-    @Column(columnDefinition = "CHAR(36) CHARACTER SET ascii")
-    val id: UUID,
+    @GeneratedValue
+    @Column(length = 36)
+    val id: UUID? = null,
 
     val systolic: Int,
     val diastolic: Int,

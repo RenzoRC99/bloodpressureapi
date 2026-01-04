@@ -12,14 +12,14 @@ class BloodPressureRepositoryImpl(
     private val jpaRepository: BloodPressureJpaRepository
 ) : BloodPressureRepository {
 
-    override fun save(bloodPressure: BloodPressure): BloodPressure =
-        BloodPressureMapper
-            .toDomain(
-                jpaRepository.save(
-                    BloodPressureMapper.toEntity(bloodPressure)
-                )
-            )
+    // CREATE: dejamos que la base de datos genere el ID
+    override fun save(bloodPressure: BloodPressure): BloodPressure {
+        val entityToSave = BloodPressureMapper.toEntity(bloodPressure)
+        val savedEntity = jpaRepository.save(entityToSave)
+        return BloodPressureMapper.toDomain(savedEntity)
+    }
 
+    // READ
     override fun findById(id: UUID): BloodPressure? =
         jpaRepository.findById(id)
             .map { BloodPressureMapper.toDomain(it) }
@@ -29,9 +29,16 @@ class BloodPressureRepositoryImpl(
         jpaRepository.findAll()
             .map { BloodPressureMapper.toDomain(it) }
 
-    override fun update(bloodPressure: BloodPressure): BloodPressure =
-        save(bloodPressure)
+    // UPDATE
+    override fun update(bloodPressure: BloodPressure): BloodPressure {
+        // Usamos save sobre entidad con ID existente
+        val entity = BloodPressureMapper.toEntityForUpdate(bloodPressure)
+        val updated = jpaRepository.save(entity)
+        return BloodPressureMapper.toDomain(updated)
+    }
 
-    override fun deleteById(id: UUID) =
+    // DELETE
+    override fun deleteById(id: UUID) {
         jpaRepository.deleteById(id)
+    }
 }
