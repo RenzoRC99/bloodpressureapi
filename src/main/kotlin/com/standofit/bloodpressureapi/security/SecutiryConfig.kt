@@ -29,8 +29,9 @@ import javax.crypto.SecretKey
 
 @Configuration
 class SecurityConfig {
-
-    private val secretKey: SecretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256)
+    private val secretKey: SecretKey = Keys.hmacShaKeyFor(
+        (System.getenv("JWT_SECRET") ?: "MiSuperSecretoMuyLargo1234567890").toByteArray()
+    )
     private val tokenPrefix = "Bearer "
     private val headerString = "Authorization"
 
