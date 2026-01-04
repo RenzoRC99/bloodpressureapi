@@ -3,6 +3,7 @@ package com.standofit.bloodpressureapi.application.usecase
 import com.standofit.bloodpressureapi.application.dto.BloodPressureRequest
 import com.standofit.bloodpressureapi.domain.model.BloodPressure
 import com.standofit.bloodpressureapi.domain.repository.BloodPressureRepository
+import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -27,6 +28,7 @@ class BloodPressureUseCase(
     fun findById(id: UUID): BloodPressure =
         repository.findById(id) ?: throw RuntimeException("Blood pressure not found")
 
+    @Transactional
     fun update(id: UUID, request: BloodPressureRequest): BloodPressure {
         val existing = findById(id)
         return repository.update(
@@ -39,6 +41,7 @@ class BloodPressureUseCase(
         )
     }
 
+    @Transactional
     fun delete(id: UUID) =
         repository.deleteById(id)
 }
